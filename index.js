@@ -13,8 +13,9 @@ const randomStr = (len, arr) => {
  */
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
-const WebSocketServer = require('websocket').server;
+var WebSocketServer = require('ws').Server;
 const http = require('http');
+var server = http.createServer()
 const config = require('./config.json');
 
 if (!config.token) {
@@ -33,9 +34,6 @@ const logOnOptions = {
   password: config.password,
   twoFactorCode: config.secret_key ? SteamTotp.generateAuthCode(config.secret_key) : null,
 };
-
-// initiate websocket server
-const server = http.createServer(() => {});
 
 // initiate steam client
 const client = new SteamUser();
@@ -128,12 +126,10 @@ server.listen(config.unix_socket_path, () => {
 });
 
 // create the websocket server
-const wsServer = new WebSocketServer({
-  httpServer: server,
-});
+var wsServer = new WebSocketServer({ server : server});
 
 
-wsServer.on('request', (request) => {
+wsServer.on('connection', (request) => {
   const connection = request.accept(null, request.origin);
   console.log(`${new Date()} Connection accepted.`);
 
