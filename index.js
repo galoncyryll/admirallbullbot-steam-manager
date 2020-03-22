@@ -54,10 +54,11 @@ server.listen(webSocketsServerPort, () => {
 
   client.on('loggedOn', () => {
     console.log('Logged into Steam');
+
     // client.setPersona(SteamUser.EPersonaState.Online);
     // client.gamesPlayed(440); //team fortress game code
+    // client.addFriend('76561198295244518');
 
-    client.addFriend('76561198295244518');
   });
 
   client.on('friendPersonasLoaded', () => {
@@ -77,7 +78,6 @@ server.listen(webSocketsServerPort, () => {
       const relationshipStatus = switcher[myFriends[i]];
 
       if (!relationshipStatus) {
-        console.log(myFriends[i]);
         continue;
       }
 
@@ -87,7 +87,7 @@ server.listen(webSocketsServerPort, () => {
       };
     }
 
-    console.log(friendsData);
+    // console.log(friendsData);
     // console.log(client.myNicknames);
   });
 
@@ -297,7 +297,7 @@ wsServer.on('request', (request) => {
   connection.on('close', () => {
     if (authClients.includes(connection)) {
       authClients.filter((obj) => obj !== connection);
-      console.log('Connection closed');
+      console.log(`${new Date()} Connection closed.`);
     }
   });
 });
