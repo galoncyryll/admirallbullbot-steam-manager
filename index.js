@@ -14,7 +14,7 @@ const randomStr = (len, arr) => {
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const WebSocketServer = require('ws').Server;
-const http = require('http');
+const https = require('https');
 const config = require('./config.json');
 
 if (!config.token) {
@@ -35,7 +35,15 @@ const logOnOptions = {
 };
 
 // initiate websocket server
-const server = http.createServer(() => {});
+const server = https.createServer();
+const wss = new WebSocketServer({
+  server: server
+});
+
+server.on('request', (req, res) => {
+  res.writeHead(200);
+  res.end('hello HTTPS world\n');
+});
 
 // initiate steam client
 const client = new SteamUser();
@@ -43,90 +51,89 @@ const client = new SteamUser();
 // authenticated client
 const authClients = [];
 
-console.log(
-  `${new Date()} Server is listening`,
-);
+server.listen(config.port, () => {
+  console.log(
+    `${new Date()} Server is listening`,
+  );
 
-// login to steam client
-client.logOn(logOnOptions);
+  // login to steam client
+  client.logOn(logOnOptions);
 
-client.on('loggedOn', () => {
-  console.log('Logged into Steam');
+  client.on('loggedOn', () => {
+    console.log('Logged into Steam');
 
-  // client.setPersona(SteamUser.EPersonaState.Online);
-  // client.gamesPlayed(440); //team fortress game code
-  // client.addFriend('76561198295244518');
+    // client.setPersona(SteamUser.EPersonaState.Online);
+    // client.gamesPlayed(440); //team fortress game code
+    // client.addFriend('76561198295244518');
 
-});
+  });
 
-client.on('friendPersonasLoaded', () => {
-  const friendsData = {};
-  const { myFriends } = client;
+  client.on('friendPersonasLoaded', () => {
+    const friendsData = {};
+    const { myFriends } = client;
 
-  const switcher = {
-    0: 0,
-    1: 1,
-    5: 1,
-    4: 2,
-    3: 3,
-    6: 3,
-  };
+    const switcher = {
+      0: 0,
+      1: 1,
+      5: 1,
+      4: 2,
+      3: 3,
+      6: 3,
+    };
 
-  for (const i in myFriends) {
-    const relationshipStatus = switcher[myFriends[i]];
+    for (const i in myFriends) {
+      const relationshipStatus = switcher[myFriends[i]];
 
-    if (!relationshipStatus) {
-      continue;
+      if (!relationshipStatus) {
+        continue;
+      }
+
+      friendsData[i] = {
+        nickname: client.myNicknames[i] || '',
+        relationship: relationshipStatus,
+      };
     }
 
-    friendsData[i] = {
-      nickname: client.myNicknames[i] || '',
-      relationship: relationshipStatus,
+    // console.log(friendsData);
+    // console.log(client.myNicknames);
+  });
+
+  client.on('friendRelationship', (sid, relationship) => {
+    const switcher = {
+      0: 0,
+      1: 1,
+      5: 1,
+      4: 2,
+      3: 3,
+      6: 3,
     };
-  }
 
-  // console.log(friendsData);
-  // console.log(client.myNicknames);
-});
+    const trueRelationship = switcher[relationship] || 0;
+    const response = {
+      event: 'FRIEND_UPDATE',
+      data: {
+        steamID: sid.accountid,
+        relationshipStatus: trueRelationship,
+      },
+    };
+    authClients.forEach((connection) => {
+      connection.send(JSON.stringify(response));
+    });
+  });
 
-client.on('friendRelationship', (sid, relationship) => {
-  const switcher = {
-    0: 0,
-    1: 1,
-    5: 1,
-    4: 2,
-    3: 3,
-    6: 3,
-  };
-
-  const trueRelationship = switcher[relationship] || 0;
-  const response = {
-    event: 'FRIEND_UPDATE',
-    data: {
-      steamID: sid.accountid,
-      relationshipStatus: trueRelationship,
-    },
-  };
-  authClients.forEach((connection) => {
-    connection.send(JSON.stringify(response));
+  client.on('nickname', (sid, newNickname) => {
+    const response = {
+      event: 'FRIEND_UPDATE',
+      data: {
+        steamID: sid.accountid,
+        nickname: newNickname,
+      },
+    };
+    authClients.forEach((connection) => {
+      connection.send(JSON.stringify(response));
+    });
   });
 });
-
-client.on('nickname', (sid, newNickname) => {
-  const response = {
-    event: 'FRIEND_UPDATE',
-    data: {
-      steamID: sid.accountid,
-      nickname: newNickname,
-    },
-  };
-  authClients.forEach((connection) => {
-    connection.send(JSON.stringify(response));
-  });
-});
-
-// create the websocket server
-const wss = new WebSocketServer({port: config.port});
 
 
 wss.on('connection', (ws) => {
@@ -297,11 +304,11 @@ wss.on('connection', (ws) => {
 });
 
 process.on('SIGINT', () => {
-  wss.close()
+  server.close()
   process.exit(1)
 })
 
 process.on('SIGTERM', () => {
-  wss.close()
+  server.close()
   process.exit(1)
 })
