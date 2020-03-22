@@ -1,1 +1,6 @@
-{"username":"","password":"","secret_key":""}
+{
+    "unix_socket_path": "",
+    "username":"",
+    "password":"",
+    "secret_key":""
+}

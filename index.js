@@ -28,7 +28,6 @@ if (!config.token) {
   });
 }
 
-const webSocketsServerPort = 1337;
 const logOnOptions = {
   accountName: config.username,
   password: config.password,
@@ -44,9 +43,9 @@ const client = new SteamUser();
 // authenticated client
 const authClients = [];
 
-server.listen(webSocketsServerPort, () => {
+server.listen(config.unix_socket_path, () => {
   console.log(
-    `${new Date()} Server is listening on port ${webSocketsServerPort}`,
+    `${new Date()} Server is listening`,
   );
 
   // login to steam client
