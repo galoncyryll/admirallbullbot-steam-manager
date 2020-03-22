@@ -13,7 +13,7 @@ const randomStr = (len, arr) => {
  */
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
-const WebSocketServer = require('ws').server;
+const WebSocketServer = require('ws').Server;
 const http = require('http');
 const config = require('./config.json');
 
