@@ -1,0 +1,18 @@
+[Unit]
+Description=Steam-Manager
+After=network.target
+
+[Service]
+Type=simple
+User=greenbot
+Group=greenbot
+WorkingDirectory=/opt/admirallbullbot-steam-manager
+RuntimeDirectory=admirallbullbot-steam-manager/%i
+RuntimeDirectoryPreserve=yes
+ExecStart=node ./index.js
+SyslogIdentifier=steam-manager@%I
+RestartSec=2
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

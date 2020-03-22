@@ -305,3 +305,8 @@ process.on('SIGINT', () => {
   server.close()
   process.exit(1)
 })
+
+process.on('SIGQUIT', () => {
+  server.close()
+  process.exit(1)
+})
