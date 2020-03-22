@@ -14,8 +14,9 @@ const randomStr = (len, arr) => {
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const WebSocketServer = require('ws').Server;
-const http = require('http');
+const http = require('http'), httpProxy = require('http-proxy');
 const config = require('./config.json');
+
 
 if (!config.token) {
   const newToken = randomStr(15, '12345abvctroygay');
@@ -35,7 +36,10 @@ const logOnOptions = {
 };
 
 // initiate websocket server
-const server = http.createServer();
+const server = httpProxy.createServer({
+  target: 'ws://localhost:1337',
+  ws: true
+});
 
 server.on('request', (req, res) => {
   res.writeHead(200);
@@ -133,7 +137,7 @@ server.listen(config.unix_socket_path, () => {
 });
 
 const wss = new WebSocketServer({
-  server: server
+  port: 1337
 });
 
 wss.on('connection', (ws) => {
