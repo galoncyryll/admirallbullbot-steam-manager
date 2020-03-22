@@ -14,7 +14,7 @@ const randomStr = (len, arr) => {
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const WebSocketServer = require('ws').Server;
-const https = require('https'), httpProxy = require('http-proxy');
+const http = require('http');
 const config = require('./config.json');
 
 
@@ -35,121 +35,16 @@ const logOnOptions = {
   twoFactorCode: config.secret_key ? SteamTotp.generateAuthCode(config.secret_key) : null,
 };
 
-// initiate websocket server
-var proxy = new httpProxy.createProxyServer({
-  target: {
-    host: 'localhost',
-    port: 1337
-  }
-});
-
-var server = https.createServer( (req, res) => {
-  proxy.web(req, res);
-});
-
-//
-// Listen to the `upgrade` event and proxy the
-// WebSocket requests as well.
-//
-server.on('upgrade', (req, socket, head) => {
-  console.log(req)
-  console.log(socket)
-  console.log(head)
-  proxy.ws(req, socket, head);
-});
-
 // initiate steam client
 const client = new SteamUser();
 
 // authenticated client
 const authClients = [];
 
-server.listen(config.unix_socket_path, () => {
-  console.log(
-    `${new Date()} Server is listening on ${config.port}`,
-  );
-
-  // login to steam client
-  client.logOn(logOnOptions);
-
-  client.on('loggedOn', () => {
-    console.log('Logged into Steam');
-
-    // client.setPersona(SteamUser.EPersonaState.Online);
-    // client.gamesPlayed(440); //team fortress game code
-    // client.addFriend('76561198295244518');
-
-  });
-
-  client.on('friendPersonasLoaded', () => {
-    const friendsData = {};
-    const { myFriends } = client;
-
-    const switcher = {
-      0: 0,
-      1: 1,
-      5: 1,
-      4: 2,
-      3: 3,
-      6: 3,
-    };
-
-    for (const i in myFriends) {
-      const relationshipStatus = switcher[myFriends[i]];
-
-      if (!relationshipStatus) {
-        continue;
-      }
-
-      friendsData[i] = {
-        nickname: client.myNicknames[i] || '',
-        relationship: relationshipStatus,
-      };
-    }
-
-    // console.log(friendsData);
-    // console.log(client.myNicknames);
-  });
-
-  client.on('friendRelationship', (sid, relationship) => {
-    const switcher = {
-      0: 0,
-      1: 1,
-      5: 1,
-      4: 2,
-      3: 3,
-      6: 3,
-    };
-
-    const trueRelationship = switcher[relationship] || 0;
-    const response = {
-      event: 'FRIEND_UPDATE',
-      data: {
-        steamID: sid.accountid,
-        relationshipStatus: trueRelationship,
-      },
-    };
-    authClients.forEach((connection) => {
-      connection.send(JSON.stringify(response));
-    });
-  });
-
-  client.on('nickname', (sid, newNickname) => {
-    const response = {
-      event: 'FRIEND_UPDATE',
-      data: {
-        steamID: sid.accountid,
-        nickname: newNickname,
-      },
-    };
-    authClients.forEach((connection) => {
-      connection.send(JSON.stringify(response));
-    });
-  });
-});
+var server = http.createServer();
 
 const wss = new WebSocketServer({
-  port: 1337
+  noServer: true
 });
 
 wss.on('connection', (ws) => {
@@ -314,6 +209,98 @@ wss.on('connection', (ws) => {
       authClients.filter((obj) => obj !== ws);
       console.log(`${new Date()} Connection closed.`);
     }
+  });
+});
+
+server.on('upgrade', (request, socket, head) => {
+  const pathname = url.parse(request.url).pathname;
+  console.info(pathname)
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
+
+server.listen(config.port, () => {
+  console.log(
+    `${new Date()} Server is listening on ${config.port}`,
+  );
+
+  // login to steam client
+  client.logOn(logOnOptions);
+
+  client.on('loggedOn', () => {
+    console.log('Logged into Steam');
+
+    // client.setPersona(SteamUser.EPersonaState.Online);
+    // client.gamesPlayed(440); //team fortress game code
+    // client.addFriend('76561198295244518');
+
+  });
+
+  client.on('friendPersonasLoaded', () => {
+    const friendsData = {};
+    const { myFriends } = client;
+
+    const switcher = {
+      0: 0,
+      1: 1,
+      5: 1,
+      4: 2,
+      3: 3,
+      6: 3,
+    };
+
+    for (const i in myFriends) {
+      const relationshipStatus = switcher[myFriends[i]];
+
+      if (!relationshipStatus) {
+        continue;
+      }
+
+      friendsData[i] = {
+        nickname: client.myNicknames[i] || '',
+        relationship: relationshipStatus,
+      };
+    }
+
+    // console.log(friendsData);
+    // console.log(client.myNicknames);
+  });
+
+  client.on('friendRelationship', (sid, relationship) => {
+    const switcher = {
+      0: 0,
+      1: 1,
+      5: 1,
+      4: 2,
+      3: 3,
+      6: 3,
+    };
+
+    const trueRelationship = switcher[relationship] || 0;
+    const response = {
+      event: 'FRIEND_UPDATE',
+      data: {
+        steamID: sid.accountid,
+        relationshipStatus: trueRelationship,
+      },
+    };
+    authClients.forEach((connection) => {
+      connection.send(JSON.stringify(response));
+    });
+  });
+
+  client.on('nickname', (sid, newNickname) => {
+    const response = {
+      event: 'FRIEND_UPDATE',
+      data: {
+        steamID: sid.accountid,
+        nickname: newNickname,
+      },
+    };
+    authClients.forEach((connection) => {
+      connection.send(JSON.stringify(response));
+    });
   });
 });
 
