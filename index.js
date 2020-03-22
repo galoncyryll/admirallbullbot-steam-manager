@@ -125,14 +125,13 @@ wss.on('connection', (ws) => {
             nickname: client.myNicknames[i] || '',
             relationship: relationshipStatus,
           };
-
-          response = {
-            event: 'BOGGED',
-            data: friendsData,
-          };
-
-          ws.send(JSON.stringify(response));
         }
+        response = {
+          event: 'BOGGED',
+          data: friendsData,
+        };
+
+        ws.send(JSON.stringify(response));
         break;
       case 'ADD_FRIEND':
         response = {
