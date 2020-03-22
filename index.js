@@ -43,7 +43,7 @@ var proxy = new httpProxy.createProxyServer({
   }
 });
 
-var server = http.createServer(function (req, res) {
+var server = http.createServer( (req, res) => {
   proxy.web(req, res);
 });
 
@@ -51,16 +51,11 @@ var server = http.createServer(function (req, res) {
 // Listen to the `upgrade` event and proxy the
 // WebSocket requests as well.
 //
-server.on('upgrade', function (req, socket, head) {
+server.on('upgrade', (req, socket, head) => {
   console.log(req)
   console.log(socket)
   console.log(head)
   proxy.ws(req, socket, head);
-});
-
-server.on('request', (req, res) => {
-  res.writeHead(200);
-  res.end('Websocket http\n');
 });
 
 // initiate steam client
@@ -156,8 +151,6 @@ server.listen(config.unix_socket_path, () => {
 const wss = new WebSocketServer({
   port: 1337
 });
-
-
 
 wss.on('connection', (ws) => {
   console.log(`${new Date()} Connection accepted.`);
