@@ -303,5 +303,8 @@ wsServer.on('request', (request) => {
 
 process.on('SIGINT', () => {
   server.close()
-  fs.unlink(config.unix_socket_path)
+  fs.unlink(config.unix_socket_path, (err) => {
+    if (err) throw err;
+    console.log('Websocket Closed');
+  });
 })
