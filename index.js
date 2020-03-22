@@ -303,4 +303,5 @@ wsServer.on('request', (request) => {
 
 process.on('SIGINT', () => {
   server.close()
+  process.exit(1)
 })
