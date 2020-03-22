@@ -36,9 +36,26 @@ const logOnOptions = {
 };
 
 // initiate websocket server
-const server = httpProxy.createServer({
-  target: 'ws://localhost:1337',
-  ws: true
+var proxy = new httpProxy.createProxyServer({
+  target: {
+    host: 'localhost',
+    port: 1337
+  }
+});
+
+var server = http.createServer(function (req, res) {
+  proxy.web(req, res);
+});
+
+//
+// Listen to the `upgrade` event and proxy the
+// WebSocket requests as well.
+//
+server.on('upgrade', function (req, socket, head) {
+  console.log(req)
+  console.log(socket)
+  console.log(head)
+  proxy.ws(req, socket, head);
 });
 
 server.on('request', (req, res) => {
@@ -139,6 +156,8 @@ server.listen(config.unix_socket_path, () => {
 const wss = new WebSocketServer({
   port: 1337
 });
+
+
 
 wss.on('connection', (ws) => {
   console.log(`${new Date()} Connection accepted.`);
