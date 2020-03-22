@@ -14,7 +14,7 @@ const randomStr = (len, arr) => {
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const WebSocketServer = require('ws').Server;
-const http = require('http'), httpProxy = require('http-proxy');
+const https = require('https'), httpProxy = require('http-proxy');
 const config = require('./config.json');
 
 
@@ -43,7 +43,7 @@ var proxy = new httpProxy.createProxyServer({
   }
 });
 
-var server = http.createServer( (req, res) => {
+var server = https.createServer( (req, res) => {
   proxy.web(req, res);
 });
 
