@@ -306,7 +306,7 @@ process.on('SIGINT', () => {
   process.exit(1)
 })
 
-process.on('SIGQUIT', () => {
+process.on('SIGTERM', () => {
   server.close()
   process.exit(1)
 })
