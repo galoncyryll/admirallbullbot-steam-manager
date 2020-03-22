@@ -15,6 +15,7 @@ const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const WebSocketServer = require('ws').Server;
 const http = require('http');
+const url = require('url');
 const config = require('./config.json');
 
 
@@ -41,10 +42,10 @@ const client = new SteamUser();
 // authenticated client
 const authClients = [];
 
-var server = http.createServer();
+const server = http.createServer();
 
 const wss = new WebSocketServer({
-  noServer: true
+  noServer: true,
 });
 
 wss.on('connection', (ws) => {
@@ -213,8 +214,8 @@ wss.on('connection', (ws) => {
 });
 
 server.on('upgrade', (request, socket, head) => {
-  const pathname = url.parse(request.url).pathname;
-  console.info(pathname)
+  const { pathname } = url.parse(request.url);
+  console.info(pathname);
   wss.handleUpgrade(request, socket, head, (ws) => {
     wss.emit('connection', ws, request);
   });
@@ -232,9 +233,8 @@ server.listen(config.port, () => {
     console.log('Logged into Steam');
 
     // client.setPersona(SteamUser.EPersonaState.Online);
-    // client.gamesPlayed(440); //team fortress game code
+    // client.gamesPlayed(440); // team fortress game code
     // client.addFriend('76561198295244518');
-
   });
 
   client.on('friendPersonasLoaded', () => {
@@ -305,11 +305,11 @@ server.listen(config.port, () => {
 });
 
 process.on('SIGINT', () => {
-  server.close()
-  process.exit(1)
-})
+  server.close();
+  process.exit(1);
+});
 
 process.on('SIGTERM', () => {
-  server.close()
-  process.exit(1)
-})
+  server.close();
+  process.exit(1);
+});
