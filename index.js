@@ -14,7 +14,7 @@ const randomStr = (len, arr) => {
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const WebSocketServer = require('ws').Server;
-const https = require('https');
+const http = require('http');
 const config = require('./config.json');
 
 if (!config.token) {
@@ -35,14 +35,11 @@ const logOnOptions = {
 };
 
 // initiate websocket server
-const server = https.createServer();
-const wss = new WebSocketServer({
-  server: server
-});
+const server = http.createServer();
 
 server.on('request', (req, res) => {
   res.writeHead(200);
-  res.end('hello HTTPS world\n');
+  res.end('Websocket http\n');
 });
 
 // initiate steam client
@@ -53,7 +50,7 @@ const authClients = [];
 
 server.listen(config.port, () => {
   console.log(
-    `${new Date()} Server is listening`,
+    `${new Date()} Server is listening on ${config.port}`,
   );
 
   // login to steam client
@@ -135,6 +132,9 @@ server.listen(config.port, () => {
   });
 });
 
+const wss = new WebSocketServer({
+  server: server
+});
 
 wss.on('connection', (ws) => {
   console.log(`${new Date()} Connection accepted.`);
