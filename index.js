@@ -13,7 +13,7 @@ const randomStr = (len, arr) => {
  */
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
-const WebSocketServer = require('ws').Server;
+const WebSocketServer = require('websocket').server;
 const http = require('http');
 const config = require('./config.json');
 
@@ -133,7 +133,7 @@ server.listen(config.port, () => {
 });
 
 const wss = new WebSocketServer({
-  server: server
+  httpServer: server
 });
 
 wss.on('connection', (ws) => {
