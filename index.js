@@ -300,3 +300,8 @@ wsServer.on('request', (request) => {
     }
   });
 });
+
+process.on('SIGINT', () => {
+  server.close()
+  fs.unlink(config.unix_socket_path)
+})
