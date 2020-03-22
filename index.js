@@ -48,7 +48,7 @@ const client = new SteamUser();
 // authenticated client
 const authClients = [];
 
-server.listen(config.port, () => {
+server.listen(config.unix_socket_path, () => {
   console.log(
     `${new Date()} Server is listening on ${config.port}`,
   );
