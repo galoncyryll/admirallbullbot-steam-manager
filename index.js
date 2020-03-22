@@ -141,11 +141,9 @@ wss.on('connection', (ws) => {
 
   // client -> server
   ws.on('message', (message) => {
-    if (message.type !== 'utf8') return;
-
     let parsed = null;
     try {
-      parsed = JSON.parse(message.utf8Data);
+      parsed = JSON.parse(message);
     } catch (e) {
       ws.send(
         JSON.stringify({ event: 'RESPONSE', error: 'invalid JSON object' }),

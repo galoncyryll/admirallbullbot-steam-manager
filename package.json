@@ -11,7 +11,8 @@
   "dependencies": {
     "https": "^1.0.0",
     "steam-totp": "^2.1.1",
-    "steam-user": "^4.13.2"
+    "steam-user": "^4.13.2",
+    "ws": "^7.2.3"
   },
   "devDependencies": {
     "eslint": "^6.8.0",
