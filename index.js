@@ -14,8 +14,6 @@ const randomStr = (len, arr) => {
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 var WebSocketServer = require('ws').Server;
-const http = require('http');
-var server = http.createServer()
 const config = require('./config.json');
 
 if (!config.token) {
@@ -41,107 +39,103 @@ const client = new SteamUser();
 // authenticated client
 const authClients = [];
 
-server.listen(5000, () => {
-  console.log(
-    `${new Date()} Server is listening`,
-  );
+console.log(
+  `${new Date()} Server is listening`,
+);
 
-  // login to steam client
-  client.logOn(logOnOptions);
+// login to steam client
+client.logOn(logOnOptions);
 
-  client.on('loggedOn', () => {
-    console.log('Logged into Steam');
+client.on('loggedOn', () => {
+  console.log('Logged into Steam');
 
-    // client.setPersona(SteamUser.EPersonaState.Online);
-    // client.gamesPlayed(440); //team fortress game code
-    // client.addFriend('76561198295244518');
+  // client.setPersona(SteamUser.EPersonaState.Online);
+  // client.gamesPlayed(440); //team fortress game code
+  // client.addFriend('76561198295244518');
 
-  });
+});
 
-  client.on('friendPersonasLoaded', () => {
-    const friendsData = {};
-    const { myFriends } = client;
+client.on('friendPersonasLoaded', () => {
+  const friendsData = {};
+  const { myFriends } = client;
 
-    const switcher = {
-      0: 0,
-      1: 1,
-      5: 1,
-      4: 2,
-      3: 3,
-      6: 3,
-    };
+  const switcher = {
+    0: 0,
+    1: 1,
+    5: 1,
+    4: 2,
+    3: 3,
+    6: 3,
+  };
 
-    for (const i in myFriends) {
-      const relationshipStatus = switcher[myFriends[i]];
+  for (const i in myFriends) {
+    const relationshipStatus = switcher[myFriends[i]];
 
-      if (!relationshipStatus) {
-        continue;
-      }
-
-      friendsData[i] = {
-        nickname: client.myNicknames[i] || '',
-        relationship: relationshipStatus,
-      };
+    if (!relationshipStatus) {
+      continue;
     }
 
-    // console.log(friendsData);
-    // console.log(client.myNicknames);
+    friendsData[i] = {
+      nickname: client.myNicknames[i] || '',
+      relationship: relationshipStatus,
+    };
+  }
+
+  // console.log(friendsData);
+  // console.log(client.myNicknames);
+});
+
+client.on('friendRelationship', (sid, relationship) => {
+  const switcher = {
+    0: 0,
+    1: 1,
+    5: 1,
+    4: 2,
+    3: 3,
+    6: 3,
+  };
+
+  const trueRelationship = switcher[relationship] || 0;
+  const response = {
+    event: 'FRIEND_UPDATE',
+    data: {
+      steamID: sid.accountid,
+      relationshipStatus: trueRelationship,
+    },
+  };
+  authClients.forEach((connection) => {
+    connection.send(JSON.stringify(response));
   });
+});
 
-  client.on('friendRelationship', (sid, relationship) => {
-    const switcher = {
-      0: 0,
-      1: 1,
-      5: 1,
-      4: 2,
-      3: 3,
-      6: 3,
-    };
-
-    const trueRelationship = switcher[relationship] || 0;
-    const response = {
-      event: 'FRIEND_UPDATE',
-      data: {
-        steamID: sid.accountid,
-        relationshipStatus: trueRelationship,
-      },
-    };
-    authClients.forEach((connection) => {
-      connection.sendUTF(JSON.stringify(response));
-    });
-  });
-
-  client.on('nickname', (sid, newNickname) => {
-    const response = {
-      event: 'FRIEND_UPDATE',
-      data: {
-        steamID: sid.accountid,
-        nickname: newNickname,
-      },
-    };
-    authClients.forEach((connection) => {
-      connection.sendUTF(JSON.stringify(response));
-    });
+client.on('nickname', (sid, newNickname) => {
+  const response = {
+    event: 'FRIEND_UPDATE',
+    data: {
+      steamID: sid.accountid,
+      nickname: newNickname,
+    },
+  };
+  authClients.forEach((connection) => {
+    connection.send(JSON.stringify(response));
   });
 });
 
 // create the websocket server
-var wsServer = new WebSocketServer({ server : server});
+var wss = new WebSocketServer({ port : config.port});
 
-
-wsServer.on('connection', (request) => {
-  const connection = request.accept(null, request.origin);
+wss.on('connection', (ws) => {
   console.log(`${new Date()} Connection accepted.`);
 
   // client -> server
-  connection.on('message', (message) => {
+  ws.on('message', (message) => {
     if (message.type !== 'utf8') return;
 
     let parsed = null;
     try {
       parsed = JSON.parse(message.utf8Data);
     } catch (e) {
-      connection.sendUTF(
+      ws.send(
         JSON.stringify({ event: 'RESPONSE', error: 'invalid JSON object' }),
       );
       return;
@@ -154,21 +148,21 @@ wsServer.on('connection', (request) => {
     ) {
       const response = { event: 'RESPONSE', error: 'invalid request' };
       if (parsed.nonce) response.nonce = parsed.nonce;
-      connection.sendUTF(JSON.stringify(response));
+      ws.send(JSON.stringify(response));
       return;
     }
 
     let response = {};
     if (
       !['LOGIN', 'PING'].includes(parsed.event)
-      && !authClients.includes(connection)
+      && !authClients.includes(ws)
     ) {
       return;
     }
 
     switch (parsed.event) {
       case 'PING':
-        connection.sendUTF(JSON.stringify({ event: 'PONG' }));
+        ws.send(JSON.stringify({ event: 'PONG' }));
         return;
       case 'LOGIN':
         response = {
@@ -176,12 +170,12 @@ wsServer.on('connection', (request) => {
           error: 'invalid token',
         };
         if (parsed.data.token === config.token) {
-          authClients.push(connection);
+          authClients.push(ws);
           response.error = '';
         }
         if (parsed.nonce) response.nonce = parsed.nonce;
 
-        connection.sendUTF(JSON.stringify(response));
+        ws.send(JSON.stringify(response));
 
         if (response.error) return;
 
@@ -215,7 +209,7 @@ wsServer.on('connection', (request) => {
             data: friendsData,
           };
 
-          connection.sendUTF(JSON.stringify(response));
+          ws.send(JSON.stringify(response));
         }
         break;
       case 'ADD_FRIEND':
@@ -226,18 +220,18 @@ wsServer.on('connection', (request) => {
         if (parsed.nonce) response.nonce = parsed.nonce;
         if (!parsed.data.steamID) {
           response.error = 'invalid steam ID';
-          connection.sendUTF(JSON.stringify(response));
+          ws.send(JSON.stringify(response));
           return;
         }
         if (!client.myFriends[parsed.data.steamID]) {
           client.addFriend(parsed.data.steamID, (resp) => {
             response.error = resp || '';
-            connection.sendUTF(JSON.stringify(response));
+            ws.send(JSON.stringify(response));
           });
           return;
         }
 
-        connection.sendUTF(JSON.stringify(response));
+        ws.send(JSON.stringify(response));
         break;
       case 'REMOVE_FRIEND':
         response = {
@@ -247,18 +241,18 @@ wsServer.on('connection', (request) => {
         if (parsed.nonce) response.nonce = parsed.nonce;
         if (!parsed.data.steamID) {
           response.error = 'invalid steam ID';
-          connection.sendUTF(JSON.stringify(response));
+          ws.send(JSON.stringify(response));
           return;
         }
         if (client.myFriends[parsed.data.steamID]) {
           client.removeFriend(parsed.data.steamID, (resp) => {
             response.error = resp || '';
-            connection.sendUTF(JSON.stringify(response));
+            ws.send(JSON.stringify(response));
           });
           return;
         }
 
-        connection.sendUTF(JSON.stringify(response));
+        ws.send(JSON.stringify(response));
         break;
       case 'NICKNAME_FRIEND':
         response = {
@@ -268,7 +262,7 @@ wsServer.on('connection', (request) => {
         if (parsed.nonce) response.nonce = parsed.nonce;
         if (!parsed.data.steamID || typeof parsed.data.nickname !== 'string') {
           response.error = 'invalid steam ID or nickname';
-          connection.sendUTF(JSON.stringify(response));
+          ws.send(JSON.stringify(response));
           return;
         }
         if (client.myFriends[parsed.data.steamID]) {
@@ -277,21 +271,21 @@ wsServer.on('connection', (request) => {
             parsed.data.nickname,
             (resp) => {
               response.error = resp || '';
-              connection.sendUTF(JSON.stringify(response));
+              ws.send(JSON.stringify(response));
             },
           );
           return;
         }
 
-        connection.sendUTF(JSON.stringify(response));
+        ws.send(JSON.stringify(response));
         break;
       default:
     }
   });
 
-  connection.on('close', () => {
-    if (authClients.includes(connection)) {
-      authClients.filter((obj) => obj !== connection);
+  ws.on('close', () => {
+    if (authClients.includes(ws)) {
+      authClients.filter((obj) => obj !== ws);
       console.log(`${new Date()} Connection closed.`);
     }
   });
@@ -299,10 +293,10 @@ wsServer.on('connection', (request) => {
 
 process.on('SIGINT', () => {
   server.close()
-  process.exit(1)
+  process.exit(0)
 })
 
 process.on('SIGTERM', () => {
   server.close()
-  process.exit(1)
+  process.exit(0)
 })
