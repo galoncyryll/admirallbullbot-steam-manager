@@ -34,6 +34,7 @@ const logOnOptions = {
   accountName: config.username,
   password: config.password,
   twoFactorCode: config.secret_key ? SteamTotp.generateAuthCode(config.secret_key) : null,
+  logonID: 121,
 };
 
 // initiate steam client
@@ -306,14 +307,27 @@ server.listen(config.port, () => {
       connection.send(JSON.stringify(response));
     });
   });
+  
+  client.on('steamGuard', (domain, callback) => {
+    console.log("Steam Auth Code Requested")
+    callback(config.secret_key ? SteamTotp.generateAuthCode(config.secret_key) : null);
+  });
+
+  client.on('error', (err) => {
+    console.log(err)
+    client.relog()
+  });
+
 });
 
 process.on('SIGINT', () => {
   server.close();
-  process.exit(1);
+  client.logOff()
+  process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   server.close();
-  process.exit(1);
+  client.logOff()
+  process.exit(0);
 });
