@@ -271,7 +271,6 @@ server.listen(config.port, () => {
   });
 
   client.on('friendRelationship', (sid, relationship) => {
-
     if (relationship === 2) return;
 
     const switcher = {
