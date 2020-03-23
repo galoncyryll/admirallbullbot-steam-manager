@@ -1,3 +1,4 @@
+/* eslint-disable linebreak-style */
 const fs = require('fs');
 
 const randomStr = (len, arr) => {
@@ -271,7 +272,7 @@ server.listen(config.port, () => {
 
   client.on('friendRelationship', (sid, relationship) => {
 
-    if (relationship == 2) return;
+    if (relationship === 2) return;
 
     const switcher = {
       0: 0,
@@ -307,27 +308,26 @@ server.listen(config.port, () => {
       connection.send(JSON.stringify(response));
     });
   });
-  
+
   client.on('steamGuard', (domain, callback) => {
-    console.log("Steam Auth Code Requested")
+    console.log('Steam Auth Code Requested');
     callback(config.secret_key ? SteamTotp.generateAuthCode(config.secret_key) : null);
   });
 
   client.on('error', (err) => {
-    console.log(err)
-    client.relog()
+    console.log(err);
+    client.relog();
   });
-
 });
 
 process.on('SIGINT', () => {
   server.close();
-  client.logOff()
+  client.logOff();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   server.close();
-  client.logOff()
+  client.logOff();
   process.exit(0);
 });
