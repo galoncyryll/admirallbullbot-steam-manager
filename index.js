@@ -285,7 +285,7 @@ server.listen(config.port, () => {
     const response = {
       event: 'FRIEND_UPDATE',
       data: {
-        steamID: sid.accountid,
+        steamID: sid.getSteamID64(),
         relationshipStatus: trueRelationship,
       },
     };
@@ -298,7 +298,7 @@ server.listen(config.port, () => {
     const response = {
       event: 'FRIEND_UPDATE',
       data: {
-        steamID: sid.accountid,
+        steamID: sid.getSteamID64(),
         nickname: newNickname,
       },
     };
