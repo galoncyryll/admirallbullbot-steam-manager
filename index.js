@@ -99,8 +99,7 @@ wss.on('connection', (ws) => {
 
         ws.send(JSON.stringify(response));
 
-        if (response.error) return;
-
+      case 'BOGGED':
         const friendsData = {};
         const { myFriends } = client;
 
@@ -126,10 +125,13 @@ wss.on('connection', (ws) => {
             relationship: relationshipStatus,
           };
         }
+
         response = {
-          event: 'BOGGED',
+          event: 'RESPONSE',
           data: friendsData,
         };
+
+        if (parsed.nonce) response.nonce = parsed.nonce;
 
         ws.send(JSON.stringify(response));
         break;
