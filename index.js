@@ -51,7 +51,7 @@ const wss = new WebSocketServer({
 });
 
 wss.on('connection', (ws) => {
-  console.log(`${new Date()} Connection accepted.`);
+  console.log('Connection accepted.');
 
   // client -> server
   ws.on('message', (message) => {
@@ -211,7 +211,7 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     if (authClients.includes(ws)) {
       authClients.filter((obj) => obj !== ws);
-      console.log(`${new Date()} Connection closed.`);
+      console.log('Connection closed.');
     }
   });
 });
@@ -226,7 +226,7 @@ server.on('upgrade', (request, socket, head) => {
 
 server.listen(config.port, () => {
   console.log(
-    `${new Date()} Server is listening on ${config.port}`,
+    `Server is listening on ${config.port}`,
   );
 
   // login to steam client
