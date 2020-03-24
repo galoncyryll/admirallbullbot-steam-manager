@@ -16,7 +16,6 @@ const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
 const WebSocketServer = require('ws').Server;
 const http = require('http');
-const url = require('url');
 const config = require('./config.json');
 
 
@@ -100,7 +99,7 @@ wss.on('connection', (ws) => {
         if (parsed.nonce) response.nonce = parsed.nonce;
 
         ws.send(JSON.stringify(response));
-
+        return;
       case 'BOGGED':
         const friendsData = {};
         const { myFriends } = client;
@@ -118,7 +117,6 @@ wss.on('connection', (ws) => {
           const relationshipStatus = switcher[myFriends[i]];
 
           if (!relationshipStatus) {
-            console.log(myFriends[i]);
             continue;
           }
 
@@ -136,7 +134,7 @@ wss.on('connection', (ws) => {
         if (parsed.nonce) response.nonce = parsed.nonce;
 
         ws.send(JSON.stringify(response));
-        break;
+        return;
       case 'ADD_FRIEND':
         response = {
           event: 'RESPONSE',
@@ -157,7 +155,7 @@ wss.on('connection', (ws) => {
         }
 
         ws.send(JSON.stringify(response));
-        break;
+        return;
       case 'REMOVE_FRIEND':
         response = {
           event: 'RESPONSE',
@@ -173,6 +171,16 @@ wss.on('connection', (ws) => {
           client.removeFriend(parsed.data.steamID, (resp) => {
             response.error = resp || '';
             ws.send(JSON.stringify(response));
+            if (!resp) {
+              response = {
+                event: 'FRIEND_UPDATE',
+                data: {
+                  steamID: parsed.data.steamID,
+                  relationshipStatus: 0,
+                },
+              };
+              ws.send(JSON.stringify(response));
+            }
           });
           return;
         }
@@ -217,8 +225,6 @@ wss.on('connection', (ws) => {
 });
 
 server.on('upgrade', (request, socket, head) => {
-  const { pathname } = url.parse(request.url);
-  console.info(pathname);
   wss.handleUpgrade(request, socket, head, (ws) => {
     wss.emit('connection', ws, request);
   });
@@ -238,36 +244,6 @@ server.listen(config.port, () => {
     // client.setPersona(SteamUser.EPersonaState.Online);
     // client.gamesPlayed(440); // team fortress game code
     // client.addFriend('76561198295244518');
-  });
-
-  client.on('friendPersonasLoaded', () => {
-    const friendsData = {};
-    const { myFriends } = client;
-
-    const switcher = {
-      0: 0,
-      1: 1,
-      5: 1,
-      4: 2,
-      3: 3,
-      6: 3,
-    };
-
-    for (const i in myFriends) {
-      const relationshipStatus = switcher[myFriends[i]];
-
-      if (!relationshipStatus) {
-        continue;
-      }
-
-      friendsData[i] = {
-        nickname: client.myNicknames[i] || '',
-        relationship: relationshipStatus,
-      };
-    }
-
-    // console.log(friendsData);
-    // console.log(client.myNicknames);
   });
 
   client.on('friendRelationship', (sid, relationship) => {
