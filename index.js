@@ -171,17 +171,6 @@ wss.on('connection', (ws) => {
           client.removeFriend(parsed.data.steamID, (resp) => {
             response.error = resp || '';
             ws.send(JSON.stringify(response));
-            if (!resp) {
-              response = {
-                event: 'FRIEND_UPDATE',
-                data: {
-                  steamID: parsed.data.steamID,
-                  relationshipStatus: 0,
-                },
-              };
-              console.log(response);
-              ws.send(JSON.stringify(response));
-            }
           });
           return;
         }
