@@ -179,6 +179,7 @@ wss.on('connection', (ws) => {
                   relationshipStatus: 0,
                 },
               };
+              console.log(response);
               ws.send(JSON.stringify(response));
             }
           });
