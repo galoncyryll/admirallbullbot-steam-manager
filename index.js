@@ -146,7 +146,7 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify(response));
           return;
         }
-        if (!client.myFriends[parsed.data.steamID]) {
+        if (!client.myFriends[parsed.data.steamID] || client.myFriends[parsed.data.steamID] === 2) {
           client.addFriend(parsed.data.steamID, (resp) => {
             response.error = resp || '';
             ws.send(JSON.stringify(response));
