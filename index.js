@@ -107,10 +107,10 @@ wss.on('connection', (ws) => {
         const switcher = {
           0: 0,
           1: 1,
-          5: 1,
           4: 2,
           3: 3,
           6: 3,
+          5: 4,
         };
 
         for (const i in myFriends) {
@@ -239,13 +239,19 @@ server.listen(config.port, () => {
   client.on('friendRelationship', (sid, relationship) => {
     if (relationship === 2) return;
 
+    if (relationship === 4) {
+      client.blockUser(sid);
+      client.unblockUser(sid);
+      return;
+    }
+
     const switcher = {
       0: 0,
       1: 1,
-      5: 1,
       4: 2,
       3: 3,
       6: 3,
+      5: 4,
     };
 
     const trueRelationship = switcher[relationship] || 0;
