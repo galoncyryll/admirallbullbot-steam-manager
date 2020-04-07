@@ -184,7 +184,7 @@ wss.on('connection', (ws) => {
         };
         if (parsed.nonce) response.nonce = parsed.nonce;
         if (!parsed.data.steamID || typeof parsed.data.nickname !== 'string') {
-          response.error = 'invalid steam ID or nickname';
+          response.error = `invalid steam ID ${parsed.data.steamID} or nickname ${parsed.data.nickname}`;
           ws.send(JSON.stringify(response));
           return;
         }
