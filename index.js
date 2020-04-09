@@ -143,18 +143,21 @@ wss.on('connection', (ws) => {
         if (parsed.nonce) response.nonce = parsed.nonce;
         if (!parsed.data.steamID) {
           response.error = 'invalid steam ID';
+          console.log(response);
           ws.send(JSON.stringify(response));
           return;
         }
         if (!client.myFriends[parsed.data.steamID] || client.myFriends[parsed.data.steamID] === 2) {
           client.addFriend(parsed.data.steamID, (resp) => {
             response.error = resp || '';
+            console.log(response);
             ws.send(JSON.stringify(response));
           });
           return;
         }
 
         ws.send(JSON.stringify(response));
+        console.log(response);
         return;
       case 'REMOVE_FRIEND':
         response = {
